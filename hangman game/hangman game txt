@@ -1,0 +1,824 @@
+INCLUDE Irvine32.inc                         
+.data
+h BYTE  "**   ** ******** ***       ** *******  ***      *** ******** ***       **",0dh,0ah,
+        "**   ** **    ** ** **     ** **       ** **  ** ** **    ** ** **     **",0dh,0ah,
+		"******* ******** **   **   ** **  **** **   **   ** ******** **   **   **",0dh,0ah,
+		"**   ** **    ** **     ** ** **  * ** **        ** **    ** **     ** **",0dh,0ah,
+		"**   ** **    ** **       *** ******** **        ** **    ** **       ***",0dh,0ah,0dh,0ah
+  Byte  "Group Members :",0dh,0ah,
+	    "M. Tuaha Ajaz (19k-0257)",0dh,0ah,
+	    "Ali Nayab Nathani (19k-0301)",0dh,0ah,
+	    "Hammad Jabbar  (19k-1367)",0dh,0ah,0
+nam BYTE "|*|*|*|*|*| HANG-MAN |*|*|*|*|*|",0      ;game name
+options BYTE "|*|*|*|*|*| MAIN MENUE |*|*|*|*|*|",0ah,0dh,
+             "1- Play Game.",0ah,0dh,
+             "2- Read Instructions.",0ah,0dh,
+			 "3- Exit.",0ah,0dh,0ah,0dh,
+			 "Enter Your choice: ",0
+choice DWORD ? 
+directives BYTE "|*|*|*|*|*| INSTRUCTIONS |*|*|*|*|*|",0ah,0dh,0ah,0dh,
+                "Choose one of the given themes based on your preference.",0ah,0dh,
+			    "The word willbe related to the theme, and you have to guess it.",0ah,0dh,
+			    "You have 10 mistakes, consider them as your lifeline!",0ah,0dh,
+			    "Either you'll make less than 10 mistakes and guess the word,",0ah,0dh, 
+				"Otherwise you'll be HANGED, meaning GAME OVER",0ah,0dh,0
+alpha BYTE "a b c d e",0ah,0dh,
+           "f g h i j",0ah,0dh,
+		   "k l m n o",0ah,0dh,
+		   "p q r s t",0ah,0dh,
+		   "u v w x y z",0ah,0dh,0
+alpha2 BYTE "a b c d e",0ah,0dh,     ;for resetting alpha
+            "f g h i j",0ah,0dh,
+		    "k l m n o",0ah,0dh,
+		    "p q r s t",0ah,0dh,
+		    "u v w x y z",0ah,0dh,0
+themes BYTE "Choose theme of your preference",0ah,0dh,
+            "1- Countries",0ah,0dh,
+			"2- Movies (Hollywood)",0ah,0dh,
+			"3- Animals",0ah,0dh,
+			"4- Computer Languages",0ah,0dh,
+			"5- Clothing Brands (in Karachi)",0ah,0dh,0ah,0dh,
+			"0- Exit",0ah,0dh,0ah,0dh,
+			"Enter your choice: ",0
+stick1 BYTE "|",0ah,0dh,            ;;for hang-man
+            "|",0ah,0dh,
+	        "|",0ah,0dh,
+	        "|",0ah,0dh,
+	        "|",0ah,0dh,
+	        "|",0ah,0dh,0
+stick2 BYTE "-------",0ah,0dh,0
+stick3 BYTE "|",0ah,0dh,
+            "|",0ah,0dh,0
+themenam BYTE "|*|*|*|*|*| THEMES |*|*|*|*|*|",0
+str5 BYTE "japan",0,"speed",0,"horse",0,"cobol",0,"furor",0       ;;first word = country; 2nd word = movies; 3rd word = animals; 4th word = PL; 5th word = brands
+str6 BYTE "norway",0,"batman",0,"jaguar",0,"pascal",0,"khaadi",0
+str7 BYTE "germany",0,"titanic",0,"leopard",0,"angular",0,"alkaram",0
+str8 BYTE "zimbabwe",0,"scarface",0,"anteater",0,"mondrian",0,"califord",0
+str9 BYTE "indonesia",0,"inception",0,"crocodile",0,"smalltalk",0,"billabong",0
+fivelet BYTE "? ? ? ? ?",0
+sixlet BYTE "? ? ? ? ? ?",0
+sevenlet BYTE "? ? ? ? ? ? ?",0
+eightlet BYTE "? ? ? ? ? ? ? ?",0
+ninelet BYTE "? ? ? ? ? ? ? ? ?",0
+guessline BYTE "Enter your guess: ",0
+guess BYTE ?      ;;guessing alphabet
+question BYTE "Do you wish to play again?",0
+titl BYTE "END GAME",0
+win BYTE "YOU GUESSED RIGHT!!",0
+loss BYTE "YOU GUESSED WRONG!!",0
+count DWORD 0       ;for counting purposes
+mistakes DWORD 10    
+flag DWORD ?        ;flag for verifying the completion of string
+misleft BYTE "MISTAKES LEFT: "   ;how many mistakes left
+
+.code
+DISPLAY PROTO x: PTR DWORD, y: DWORD 
+ALPHABET PROTO cnt: DWORD
+guessing PROTO emp: PTR DWORD, target: PTR DWORD
+main PROC
+mov edx, OFFSET h
+call writestring
+mov eax, 5000      ;;5 seconds delay
+call delay
+call clrscr
+
+men:
+mov dh, 0
+mov dl, 38
+call gotoXY
+mov edx, OFFSET options
+call writestring
+call readint          ;to enter choice
+mov choice, eax
+cmp choice, 2
+jb gamebegin
+je inst
+ja las
+
+inst:
+call INSTRUCTIONS
+call waitMsg        ;enter to clear screen
+call clrscr
+jmp men
+
+gamebegin:
+call clrscr
+mov dh, 0 
+mov dl, 38
+call gotoXY
+mov edx, OFFSET themenam
+call writestring
+call crlf 
+mov edx, OFFSET themes
+call writestring
+call readint             ;choice to enter theme
+mov choice, eax
+cmp choice, 0
+jz las
+cmp choice, 1          ;comparison for themes
+jz country
+cmp choice, 2
+jz movie
+cmp choice, 3
+jz animals
+cmp choice, 4
+jz languages
+cmp choice, 5
+jz brands
+
+country:
+call randomize
+mov eax, 6
+call randomrange
+cmp eax, 1        ;comparison for random words
+je fivec
+cmp eax, 2
+je sixc
+cmp eax, 3
+je sevenc
+cmp eax, 4
+je eightc
+cmp eax, 5
+je ninec
+
+fivec:
+INVOKE guessing, OFFSET fivelet, OFFSET str5
+jmp ques
+
+sixc:
+INVOKE guessing, OFFSET sixlet, OFFSET str6
+jmp ques
+
+sevenc:
+INVOKE guessing, OFFSET sevenlet, OFFSET str7
+jmp ques
+
+eightc:
+INVOKE guessing, OFFSET eightlet, OFFSET str8
+jmp ques
+
+ninec:
+INVOKE guessing, OFFSET ninelet, OFFSET str9
+jmp ques
+
+movie:
+call randomize
+mov eax, 6
+call randomrange
+cmp eax, 1
+je fivem
+cmp eax, 2
+je sixm
+cmp eax, 3
+je sevenm
+cmp eax, 4
+je eightm
+cmp eax, 5
+je ninem
+
+fivem:
+INVOKE guessing, OFFSET fivelet, OFFSET str5 + 6
+jmp ques
+
+sixm:
+INVOKE guessing, OFFSET sixlet, OFFSET str6 + 7
+jmp ques
+
+sevenm:
+INVOKE guessing, OFFSET sevenlet, OFFSET str7 + 8
+jmp ques
+
+eightm:
+INVOKE guessing, OFFSET eightlet, OFFSET str8 + 9
+jmp ques
+
+ninem:
+INVOKE guessing, OFFSET ninelet, OFFSET str9 + 10
+jmp ques
+
+animals:
+call randomize
+mov eax, 6
+call randomrange
+cmp eax, 1
+je fivea
+cmp eax, 2
+je sixa
+cmp eax, 3
+je sevena
+cmp eax, 4
+je eighta
+cmp eax, 5
+je ninea
+
+fivea:
+INVOKE guessing, OFFSET fivelet, OFFSET str5 + 12
+jmp ques
+
+sixa:
+INVOKE guessing, OFFSET sixlet, OFFSET str6 + 14
+jmp ques
+
+sevena:
+INVOKE guessing, OFFSET sevenlet, OFFSET str7 + 16
+jmp ques
+
+eighta:
+INVOKE guessing, OFFSET eightlet, OFFSET str8 + 18
+jmp ques
+
+ninea:
+INVOKE guessing, OFFSET ninelet, OFFSET str9 + 20
+jmp ques
+
+languages:
+call randomize
+mov eax, 6
+call randomrange
+cmp eax, 1
+je fivel
+cmp eax, 2
+je sixl
+cmp eax, 3
+je sevenl
+cmp eax, 4
+je eightl
+cmp eax, 5
+je ninel
+
+fivel:
+INVOKE guessing, OFFSET fivelet, OFFSET str5 + 18
+jmp ques
+
+sixl:
+INVOKE guessing, OFFSET sixlet, OFFSET str6 + 21
+jmp ques
+
+sevenl:
+INVOKE guessing, OFFSET sevenlet, OFFSET str7 + 24
+jmp ques
+
+eightl:
+INVOKE guessing, OFFSET eightlet, OFFSET str8 + 27
+jmp ques
+
+ninel:
+INVOKE guessing, OFFSET ninelet, OFFSET str9 + 30
+jmp ques
+
+brands:
+call randomize
+mov eax, 6
+call randomrange
+cmp eax, 1
+je fiveb
+cmp eax, 2
+je sixb
+cmp eax, 3
+je sevenb
+cmp eax, 4
+je eightb
+cmp eax, 5
+je nineb
+
+fiveb:
+INVOKE guessing, OFFSET fivelet, OFFSET str5 + 24
+jmp ques
+
+sixb:
+INVOKE guessing, OFFSET sixlet, OFFSET str6 + 28
+jmp ques
+
+sevenb:
+INVOKE guessing, OFFSET sevenlet, OFFSET str7 + 32
+jmp ques
+
+eightb:
+INVOKE guessing, OFFSET eightlet, OFFSET str8 + 36
+jmp ques
+
+nineb:
+INVOKE guessing, OFFSET ninelet, OFFSET str9 + 40
+jmp ques
+
+ques:
+call RESET
+mov edx, OFFSET question
+mov ebx, OFFSET titl
+call msgboxask
+cmp eax, 7
+je las
+jmp gamebegin
+
+las:
+exit
+main ENDP
+
+;;to display instructions
+INSTRUCTIONS PROC
+call clrscr
+mov dh, 0
+mov dl, 38
+call gotoXY
+mov edx, OFFSET directives
+call writestring
+ret
+INSTRUCTIONS ENDP
+
+;;procedure for guessing letters of the unknown word
+guessing PROC emp: PTR DWORD, target: PTR DWORD
+LOCAL cnt: DWORD
+mov cnt, 0
+mov ebx, emp
+mov esi, target
+mov ecx, 10
+again:
+      mov al, [esi]
+      cmp al, 0
+	  jz bahir
+      inc cnt      ;;no. of letters in the word
+	  inc esi
+	  loop again
+bahir:
+mov ecx, mistakes
+L1:
+   push ecx
+   mov flag, 0
+   call clrscr
+   INVOKE DISPLAY, emp, ecx
+   mov ebx, emp     ;;empty string of ? 
+   mov esi, target  ;;the answer string
+   mov dh, 13
+   mov dl, 0
+   call gotoXY
+   mov edx, OFFSET guessline
+   call writestring
+   call readchar 
+   mov guess, al    ;;letter guessing
+   mov count, 0
+   mov ecx, cnt
+   L2:
+      mov al, [esi]
+      cmp al, guess
+      jz same
+      inc esi
+	  add ebx, 2    ;;to jump to next ?
+      loop L2
+	  jmp notsame
+      same:
+	  mov flag, 2
+      mov [ebx], al
+      inc esi
+	  add ebx, 2
+	  loop L2
+   notsame:
+   mov ecx, cnt
+   mov ebx, emp
+   L3:          ;;loop to check if whole word guessed of not
+	  mov al, [ebx]
+	  cmp al, '?'
+	  jz next1
+	  add ebx, 2
+	  loop L3
+      jmp next2
+	  next1:     ;;whole word not guessed
+   pop ecx
+   mov esi, 0
+   INVOKE ALPHABET, LENGTHOF alpha
+   cmp ecx, 0
+   cmp flag, 1     ;;flag to determine if guessed correct or wrong; 0 for wrong and 2 for right
+   ja nodec
+   dec ecx       ;;dec ecx if guess not correct 
+   nodec:        ;;label to not decrement ecx meaning that guess is right
+   jnz L1
+   jmp next3
+   next2:       ;;whole word guessed
+   mov ebx, OFFSET titl
+   mov edx, OFFSET win
+   call msgbox
+   ret
+   next3:
+   mov ebx, OFFSET titl
+   mov edx, OFFSET loss
+   call msgbox
+ret
+guessing ENDP
+
+;recursive procedure to cut guessed letters
+ALPHABET PROC cnt: DWORD
+mov al, alpha[esi * TYPE alpha]
+cmp al, guess
+jz next
+inc esi
+dec cnt
+cmp cnt, 0
+jb next1
+INVOKE ALPHABET, cnt
+next:
+mov alpha[esi * TYPE alpha], '*'
+next1:
+ret    ;; return to line no 386
+ALPHABET ENDP
+
+;;procedure for the display screen of guessing
+DISPLAY PROC x: PTR DWORD, y: DWORD
+LOCAL cnt: BYTE
+mov dh, 0
+mov dl, 38
+call gotoXY
+mov edx, OFFSET nam
+call writestring
+call crlf
+call crlf
+mov dh, 5
+mov dl, 0
+call gotoXY
+mov edx, x
+call writestring
+mov dh, 7
+mov dl, 0
+call gotoXY
+mov edx, OFFSET alpha
+call writestring
+call crlf
+mov dh, 12
+mov dl, 0
+call gotoXY
+mov edx, OFFSET misleft
+call writestring
+mov eax, y
+call writedec
+call crlf                  ;dl = 38
+cmp y, 10
+jz next10
+cmp y, 9
+jz next1
+cmp y, 8
+jz next2
+cmp y, 7
+jz next3
+cmp y, 6
+jz next4
+cmp y, 5
+jz next5
+cmp y, 4
+jz next6
+cmp y, 3
+jz next7
+cmp y, 2
+jz next8
+cmp y, 1
+jz next9
+
+next1:
+mov cnt, 6
+mov ecx, 6
+mov esi, 0
+L1:
+   mov dh, cnt
+   mov dl, 38
+   call gotoXY
+   mov al, stick1[esi * TYPE stick1]
+   call writechar
+   inc cnt
+   add esi, 3
+   loop L1
+   jmp next10
+next2:
+mov cnt, 6
+mov ecx, 6
+mov esi, 0
+L2:
+   mov dh, cnt
+   mov dl, 38
+   call gotoXY
+   mov al, stick1[esi * TYPE stick1]
+   call writechar
+   inc cnt
+   add esi, 3
+   loop L2
+   mov dh, 6
+   mov dl, 39
+   call gotoXY
+   mov edx, OFFSET stick2
+   call writestring
+   jmp next10
+next3:
+mov cnt, 6
+mov ecx, 6
+mov esi, 0
+L3:
+   mov dh, cnt
+   mov dl, 38
+   call gotoXY
+   mov al, stick1[esi * TYPE stick1]
+   call writechar
+   inc cnt
+   add esi, 3
+   loop L3
+   mov dh, 6
+   mov dl, 39
+   call gotoXY
+   mov edx, OFFSET stick2
+   call writestring
+   mov dh, 7
+   mov dl, 45
+   call gotoXY
+   mov edx, OFFSET stick3
+   call writestring
+   jmp next10
+next4:
+mov cnt, 6
+mov ecx, 6
+mov esi, 0
+L4:
+   mov dh, cnt
+   mov dl, 38
+   call gotoXY
+   mov al, stick1[esi * TYPE stick1]
+   call writechar
+   inc cnt
+   add esi, 3
+   loop L4
+   mov dh, 6
+   mov dl, 39
+   call gotoXY
+   mov edx, OFFSET stick2
+   call writestring
+   mov dh, 7
+   mov dl, 45
+   call gotoXY
+   mov edx, OFFSET stick3
+   call writestring
+   mov dh, 8
+   mov dl, 45
+   call gotoXY
+   mov al, 'O'
+   call writechar
+   jmp next10
+next5:
+mov cnt, 6
+mov ecx, 6
+mov esi, 0
+L5:
+   mov dh, cnt
+   mov dl, 38
+   call gotoXY
+   mov al, stick1[esi * TYPE stick1]
+   call writechar
+   inc cnt
+   add esi, 3
+   loop L5
+   mov dh, 6
+   mov dl, 39
+   call gotoXY
+   mov edx, OFFSET stick2
+   call writestring
+   mov dh, 7
+   mov dl, 45
+   call gotoXY
+   mov edx, OFFSET stick3
+   call writestring
+   mov dh, 8
+   mov dl, 45
+   call gotoXY
+   mov al, 'O'
+   call writechar
+   mov dh, 9
+   mov dl, 45
+   call gotoXY
+   mov al, '|'
+   call writechar
+   jmp next10
+next6:
+mov cnt, 6
+mov ecx, 6
+mov esi, 0
+L6:
+   mov dh, cnt
+   mov dl, 38
+   call gotoXY
+   mov al, stick1[esi * TYPE stick1]
+   call writechar
+   inc cnt
+   add esi, 3
+   loop L6
+   mov dh, 6
+   mov dl, 39
+   call gotoXY
+   mov edx, OFFSET stick2
+   call writestring
+   mov dh, 7
+   mov dl, 45
+   call gotoXY
+   mov edx, OFFSET stick3
+   call writestring
+   mov dh, 8
+   mov dl, 45
+   call gotoXY
+   mov al, 'O'
+   call writechar
+   mov dh, 9
+   mov dl, 45
+   call gotoXY
+   mov al, '|'
+   call writechar
+   mov dh, 9
+   mov dl, 44
+   call gotoXY
+   mov al, '/'
+   call writechar
+   jmp next10
+next7:
+mov cnt, 6
+mov ecx, 6
+mov esi, 0
+L7:
+   mov dh, cnt
+   mov dl, 38
+   call gotoXY
+   mov al, stick1[esi * TYPE stick1]
+   call writechar
+   inc cnt
+   add esi, 3
+   loop L7
+   mov dh, 6
+   mov dl, 39
+   call gotoXY
+   mov edx, OFFSET stick2
+   call writestring
+   mov dh, 7
+   mov dl, 45
+   call gotoXY
+   mov edx, OFFSET stick3
+   call writestring
+   mov dh, 8
+   mov dl, 45
+   call gotoXY
+   mov al, 'O'
+   call writechar
+   mov dh, 9
+   mov dl, 45
+   call gotoXY
+   mov al, '|'
+   call writechar
+   mov dh, 9
+   mov dl, 44
+   call gotoXY
+   mov al, '/'
+   call writechar
+   mov dh, 9
+   mov dl, 46
+   call gotoXY
+   mov al, '\'
+   call writechar
+   jmp next10
+next8:
+mov cnt, 6
+mov ecx, 6
+mov esi, 0
+L8:
+   mov dh, cnt
+   mov dl, 38
+   call gotoXY
+   mov al, stick1[esi * TYPE stick1]
+   call writechar
+   inc cnt
+   add esi, 3
+   loop L8
+   mov dh, 6
+   mov dl, 39
+   call gotoXY
+   mov edx, OFFSET stick2
+   call writestring
+   mov dh, 7
+   mov dl, 45
+   call gotoXY
+   mov edx, OFFSET stick3
+   call writestring
+   mov dh, 8
+   mov dl, 45
+   call gotoXY
+   mov al, 'O'
+   call writechar
+   mov dh, 9
+   mov dl, 45
+   call gotoXY
+   mov al, '|'
+   call writechar
+   mov dh, 9
+   mov dl, 44
+   call gotoXY
+   mov al, '/'
+   call writechar
+   mov dh, 9
+   mov dl, 46
+   call gotoXY
+   mov al, '\'
+   call writechar
+   mov dh, 10
+   mov dl, 44
+   call gotoXY
+   mov al, '/'
+   call writechar
+   jmp next10
+next9:
+mov cnt, 6
+mov ecx, 6
+mov esi, 0
+L9:
+   mov dh, cnt
+   mov dl, 38
+   call gotoXY
+   mov al, stick1[esi * TYPE stick1]
+   call writechar
+   inc cnt
+   add esi, 3
+   loop L9
+   mov dh, 6
+   mov dl, 39
+   call gotoXY
+   mov edx, OFFSET stick2
+   call writestring
+   mov dh, 7
+   mov dl, 45
+   call gotoXY
+   mov edx, OFFSET stick3
+   call writestring
+   mov dh, 8
+   mov dl, 45
+   call gotoXY
+   mov al, 'O'
+   call writechar
+   mov dh, 9
+   mov dl, 45
+   call gotoXY
+   mov al, '|'
+   call writechar
+   mov dh, 9
+   mov dl, 44
+   call gotoXY
+   mov al, '/'
+   call writechar
+   mov dh, 9
+   mov dl, 46
+   call gotoXY
+   mov al, '\'
+   call writechar
+   mov dh, 10
+   mov dl, 44
+   call gotoXY
+   mov al, '/'
+   call writechar
+   mov dh, 10
+   mov dl, 46
+   call gotoXY
+   mov al, '\'
+   call writechar
+next10:
+ret
+DISPLAY ENDP
+
+;;procedure to reset the display screen
+RESET PROC
+mov esi, 0
+mov ecx, LENGTHOF alpha
+L1:
+   mov bl, alpha2[esi * TYPE alpha2]
+   mov alpha[esi * TYPE alpha], bl
+   inc esi
+   loop L1
+mov esi, 0
+mov ecx, 5
+L2:
+   mov fivelet[esi * TYPE fivelet], '?'
+   add esi, 2
+   loop L2
+mov esi, 0   
+mov ecx, 6
+L3:
+   mov sixlet[esi * TYPE sixlet], '?'
+   add esi, 2
+   loop L3
+mov esi, 0
+mov ecx, 7
+L4:
+   mov sevenlet[esi * TYPE sevenlet], '?'
+   add esi, 2
+   loop L4
+mov esi, 0
+mov ecx, 8
+L5:
+   mov eightlet[esi * TYPE eightlet], '?'
+   add esi, 2
+   loop L5
+mov esi, 0
+mov ecx, 9
+L6:
+   mov ninelet[esi * TYPE ninelet], '?'
+   add esi, 2
+   loop L6
+ret 
+RESET ENDP
+
+END main
